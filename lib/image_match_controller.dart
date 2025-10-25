@@ -1,13 +1,14 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:lottie/lottie.dart';
 
 class ImageMatchController extends GetxController {
-  final images = <String>[].obs; // shuffled images
+  final images = <String>[].obs;
   final revealed = <bool>[].obs;
   final highlightStates = <int, Color?>{}.obs;
-
   final selectedIndexes = <int>[].obs;
+
   var score = 0.obs;
   var timeElapsed = 0.obs;
   var isBusy = false.obs;
@@ -28,20 +29,16 @@ class ImageMatchController extends GetxController {
   }
 
   void startGame() {
-    // stop any old timer
     _timer?.cancel();
-
-    // create pairs & shuffle
     final pairs = [..._allImages, ..._allImages]..shuffle();
-    images.assignAll(pairs);
 
+    images.assignAll(pairs);
     revealed.assignAll(List.filled(pairs.length, false));
     highlightStates.clear();
     selectedIndexes.clear();
     score.value = 0;
     timeElapsed.value = 0;
 
-    // start timer
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       timeElapsed.value++;
     });
@@ -62,8 +59,11 @@ class ImageMatchController extends GetxController {
       if (isMatch) {
         score.value++;
         _showHighlight([first, second], success: true);
+        _showSuccessAnimation(context);
+
         if (score.value == _allImages.length) {
           _timer?.cancel();
+          await Future.delayed(const Duration(seconds: 2));
           _showWinDialog(context);
         }
       } else {
@@ -87,6 +87,31 @@ class ImageMatchController extends GetxController {
     for (var i in indexes) {
       highlightStates[i] = null;
     }
+  }
+
+  void _showSuccessAnimation(BuildContext context) {
+    Get.dialog(
+      Center(
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          width: 180,
+          height: 180,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Lottie.asset(
+            'assets/Trophy.json',
+            repeat: false,
+          ),
+        ),
+      ),
+      barrierDismissible: false,
+    );
+
+    Future.delayed(const Duration(seconds: 2), () {
+      if (Get.isDialogOpen ?? false) Get.back();
+    });
   }
 
   void _showWinDialog(BuildContext context) {
